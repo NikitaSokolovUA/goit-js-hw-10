@@ -1,6 +1,7 @@
 import './css/styles.css';
 import debounce from 'lodash.debounce';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import API from './fetchCountries'
 
 
 const DEBOUNCE_DELAY = 300;
@@ -14,11 +15,14 @@ refs.inputSearch.addEventListener('input', debounce(onInputSearch, DEBOUNCE_DELA
 
 function onInputSearch(e) {
     const name = e.target.value.trim()
+
     if (name.length === 0) {
+        clearListCountries()
+        clearInfoBox()
         return
     }
 
-    fetchCountries(name)
+    API.fetchCountries(name)
         .then(addMarkupOnPage)
     .catch(() => Notify.failure('Oops, there is no country with that name'))
 }
@@ -26,34 +30,21 @@ function onInputSearch(e) {
 function addMarkupOnPage(countries) {  
 
     if (countries.length > 10) {
-                Notify.info('Too many matches found. Please enter a more specific name.');
-                return
+        Notify.info('Too many matches found. Please enter a more specific name.');
+        return
     }
     
     if (countries.length === 1) {  
         const countryInfo = renderInfoCountry(countries[0])
         
-        refs.listCountry.innerHTML = '';
-        refs.infoBoxCountry.innerHTML = countryInfo
-                return
+        clearListCountries()
+        addInfoBoxOnPage(countryInfo)
+        return
     }    
-           
-    const countriesList = renderTamplateCountries(countries)
-    refs.listCountry.innerHTML = countriesList
-}
-
-
-
-function fetchCountries(name) {
-    const searchParams = '?fields=name,capital,population,flags,languages'
-
-
-    return fetch(`https://restcountries.com/v2/name/${name}${searchParams}`)
-        .then(responce => {
-            if (!responce.ok) {
-        throw new Error(responce.status);
-      }
-      return responce.json();})
+      
+        clearInfoBox()
+        const countriesList = renderTamplateCountries(countries)
+        addListCountriesOnPage(countriesList)
 }
 
 function renderTamplateCountries(countries) {
@@ -76,4 +67,20 @@ function renderInfoCountry(country) {
             <p><b>Population: </b>${country.population}</p>
             <p><b>Languages: </b>${languagesCountry}</p>
     `
+}
+
+function clearListCountries() {
+    refs.listCountry.innerHTML = '';
+}
+
+function clearInfoBox() {
+    refs.infoBoxCountry.innerHTML = "";
+}
+
+function addListCountriesOnPage(markup) {
+    refs.listCountry.innerHTML = markup;
+}
+
+function addInfoBoxOnPage(markup) {
+    refs.infoBoxCountry.innerHTML = markup;
 }
